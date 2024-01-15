@@ -55,7 +55,6 @@
 #define iQuit    1
 
 #define mFont    100
-
 #define mStyle    101
 #define iPlain    1
 #define iBold    2
@@ -77,8 +76,10 @@
 #define kMoscowTimeZone 3
 #define kUlanBatorTimeZone 4
 
-#define TopLeft(r)  (*(Point*) &(r).top)
-#define BottomRight(r)    (*(Point *) &(r) .bottom)
+
+/* Rect를 Point로 변환 */
+#define TopLeft(r)        (*(Point *) &(r).top)
+#define BottomRight(r)    (*(Point *) &(r).bottom)
 
 #define IsHighBitSet(longNum)  ((longNum >> 23) & 1)
 #define SetHighByte(longNum)  ( longNum |= 0xFF000000 )
@@ -87,10 +88,11 @@
 /* Globals */
 
 Boolean gDone, gHasPopupControl;
-short gLastFont = 1, gCurrentZoneID;
+
+short gLastFont = 1;  /* 기본 폰트 */
+short gCurrentZoneID = kCurrentTimeZone;
 Style gCurrentStyle = kPlainStyle;
 Rect gClockRect;
-
 
 void ToolBoxInit(void);
 
@@ -126,7 +128,6 @@ long GetZoneOffset(void);
 int main(void) {
 
 //    printf("Hello, World\n");
-
     ToolBoxInit();
     WindowInit();
     MenuBarInit();
@@ -172,24 +173,27 @@ void MenuBarInit(void) {
     OSErr myErr;
     long feature;
 
-    menuBar = GetNewMBar(kBaseResID);
+
+    menuBar = GetNewMBar(kBaseResID); // MBAR resource
     SetMenuBar(menuBar);
     menu = GetMHandle(mApple);
     AddResMenu(menu, 'DRVR');
 
     menu = GetMenu(mFont);
+    // menu bar 에는 표시하지 않음
     InsertMenu(menu, kNotANormalMenu);
     AddResMenu(menu, 'FONT');
 
-
     menu = GetMenu(mStyle);
     InsertMenu(menu, kNotANormalMenu);
+    // 체크 마크 표시
     CheckItem(menu, iPlain, true);
 
     DrawMenuBar();
     HandleFontChoice(gLastFont);
     myErr = Gestalt(gestaltPopupAttr, &feature);
 
+    // 팝업 컨트롤 활성화?
     gHasPopupControl = ((myErr == noErr)
                         && (feature & (1 << gestaltPopupPresent)));
 
@@ -217,8 +221,9 @@ void EventLoop(void) {
 
 void DoEvent(EventRecord *eventPtr) {
 
-
     char theChar;
+    // menu ID 2bytes, item number 2bytes
+    long menuKey;
     switch (eventPtr->what) {
 
         case mouseDown:
@@ -226,9 +231,11 @@ void DoEvent(EventRecord *eventPtr) {
             break;
         case keyDown:
         case autoKey:
+            // 입력된 character
             theChar = eventPtr->message & charCodeMask;
             if ((eventPtr->modifiers & cmdKey) != 0) {
-                HandleMenuChoice(MenuKey(theChar));
+                menuKey = MenuKey(theChar);
+                HandleMenuChoice(menuKey);
             }
             break;
         case updateEvt:
@@ -257,6 +264,7 @@ void HandleMouseDown(EventRecord *eventPtr) {
     ControlHandle control;
     short ignored;
 
+    // 어느 window의 어느 part에 이벤트가 발생했는지 찾음
     thePart = FindWindow(eventPtr->where, &whichWindow);
 
     switch (thePart) {
@@ -264,32 +272,35 @@ void HandleMouseDown(EventRecord *eventPtr) {
             menuChoice = MenuSelect(eventPtr->where);
             HandleMenuChoice(menuChoice);
             break;
+        //
         case inSysWindow:
             SystemClick(eventPtr, whichWindow);
             break;
+
         case inContent:
             SetPort(whichWindow);
+            // 로컬 좌표로 변환
             GlobalToLocal(&eventPtr->where);
-
+            // 컨트롤을 찾는다
             if (FindControl(eventPtr->where, whichWindow, &control)) {
 
+                // 팝업
                 ignored = TrackControl(control, eventPtr->where, kUseDefaultProc);
-
+                // 팝업에서 선택된 값
                 gCurrentZoneID = GetCtlValue(control);
 
-                printf("gCurrentZoneID=%x\n", gCurrentZoneID);
+                // printf("gCurrentZoneID=%x\n", gCurrentZoneID);
 
             }
-
             break;
+
         case inDrag:
             DragWindow(whichWindow, eventPtr->where, &qd.screenBits.bounds);
             break;
 
         case inZoomIn:
         case inZoomOut:
-            if (TrackBox(whichWindow, eventPtr->where,
-                         thePart)) {
+            if (TrackBox(whichWindow, eventPtr->where, thePart)) {
                 SetUpZoomPosition(whichWindow, thePart);
                 ZoomWindow(whichWindow, thePart, kLeaveWhereItIs);
             }
@@ -297,8 +308,10 @@ void HandleMouseDown(EventRecord *eventPtr) {
     }
 }
 
+/*
+ * zoom box
+ * */
 void SetUpZoomPosition(WindowPtr window, short zoominOrOut) {
-
 
     WindowPeek wPeek;
     WStateData *wStatePtr;
@@ -314,10 +327,14 @@ void SetUpZoomPosition(WindowPtr window, short zoominOrOut) {
 
     wStatePtr->stdState = windowRect;
     wStatePtr->userState = wStatePtr->stdState;
+
+    // 팝업 컨트롤은 System 7부터 가능
     if (gHasPopupControl) {
 
+        // 현재 크기는?
         isBig = (windowRect.bottom - windowRect.top) >
                 (gClockRect.bottom - gClockRect.top);
+
         if (isBig) {
             deltaPixels = -kExtraPopupPixels;
         } else {
@@ -329,10 +346,10 @@ void SetUpZoomPosition(WindowPtr window, short zoominOrOut) {
         } else {
             wStatePtr->stdState.bottom += deltaPixels;
         }
+    //     System 6 이하일 경우
     } else {
         SysBeep(20);
     }
-
 
 }
 
@@ -363,6 +380,7 @@ void HandleMenuChoice(long menuChoice) {
 
         }
 
+        // 메뉴 끄기
         HiliteMenu(0);
 
     }
@@ -387,7 +405,6 @@ void HandleAppleChoice(short item) {
             accNumber = OpenDeskAcc(accName);
             break;
 
-
     }
 
 }
@@ -396,20 +413,19 @@ void HandleAppleChoice(short item) {
 void HandleFileChoice(short item) {
     switch (item) {
 
+        // 프로그램 종료
         case iQuit:
             gDone = true;
             break;
     }
-
 }
+
 
 void HandleFontChoice(short item) {
     short fontNumber;
-
-
     Str255 fontName;
-
     MenuHandle menuHandle;
+
     menuHandle = GetMHandle(mFont);
 
     CheckItem(menuHandle, gLastFont, kRemoveCheckMark);
@@ -417,6 +433,7 @@ void HandleFontChoice(short item) {
     gLastFont = item;
     GetItem(menuHandle, item, fontName);
     GetFNum(fontName, &fontNumber);
+    // 폰트 변경
     TextFont(fontNumber);
 }
 
@@ -428,6 +445,7 @@ void HandleStyleChoice(short item) {
             gCurrentStyle = kPlainStyle;
             break;
         case iBold:
+            // gCurrentStyle ^= bold;
             if (gCurrentStyle & bold) {
                 gCurrentStyle -= bold;
             } else {
@@ -486,6 +504,7 @@ void DoUpdate(EventRecord *eventPtr) {
     BeginUpdate(window);
     GetDateTime(&curTimeinSecs);
     curTimeinSecs += GetZoneOffset();
+    // Pascal 스트링으로 변환
     IUTimeString((long) curTimeinSecs, kIncludeSeconds, timeString);
     EraseRect(&gClockRect);
     MoveTo(kClockLeft, kClockTop);
@@ -500,8 +519,10 @@ long GetZoneOffset(void) {
     MachineLocation loc;
     long delta, defaultZoneOffset;
 
+    // PRAM에서 설정된 지역과 타임존을 가져 온다.
     ReadLocation(&loc);
 
+    // loc.gmtFlags.gmtDelta
     defaultZoneOffset = ClearHighByte(loc.u.gmtDelta);
     if (IsHighBitSet(defaultZoneOffset)) {
         SetHighByte(defaultZoneOffset);
@@ -522,8 +543,10 @@ long GetZoneOffset(void) {
             break;
     }
 
+    delta -= defaultZoneOffset;
 
     return delta;
+
 }
 
 
