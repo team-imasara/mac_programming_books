@@ -289,7 +289,7 @@ void HandleMouseDown(EventRecord *eventPtr) {
                 // 팝업에서 선택된 값
                 gCurrentZoneID = GetCtlValue(control);
 
-                // printf("gCurrentZoneID=%x\n", gCurrentZoneID);
+                printf("gCurrentZoneID=%x\n", gCurrentZoneID);
 
             }
             break;

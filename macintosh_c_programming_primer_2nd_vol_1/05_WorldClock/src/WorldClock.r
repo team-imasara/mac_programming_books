@@ -1,6 +1,4 @@
-data 'MBAR' (128) {
-	$"0005 0080 0081 0082 0083 0084"                      /* ...Ä.Å.Ç.É.Ñ */
-};
+#include "Processes.r"
 
 data 'MENU' (128, "Apple Menu") {
 	$"0080 0000 0000 0000 0000 FFFF FFFB 0114"            /* .Ä........ˇˇˇ˚.. */
@@ -61,3 +59,27 @@ data 'WIND' (128) {
 	$"0000 0A57 6F72 6C64 436C 6F63 6B"                   /* ...WorldClock */
 };
 
+data 'MBAR' (128) {
+	$"0004 0080 0081 0082 0083"                           /* ...Ä.Å.Ç.É */
+};
+
+resource 'SIZE' (-1) {
+	reserved,
+	acceptSuspendResumeEvents,
+	reserved,
+	canBackground,
+	multiFinderAware,
+	backgroundAndForeground,
+	dontGetFrontClicks,
+	ignoreChildDiedEvents,
+	not32BitCompatible,
+	isHighLevelEventAware,
+	onlyLocalHLEvents,
+	notStationeryAware,
+	dontUseTextEditServices,
+	notDisplayManagerAware,
+	reserved,
+	reserved,
+	100 * 1024,
+	24 * 1024
+};

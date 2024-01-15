@@ -19,9 +19,13 @@ add_compile_definitions(
 
 
 add_application(Primer1_05_WorldClock
+        TYPE "APPL"
+        CREATOR "R68L"
 #        ../../ThinkCHelper/ThinkHelpers.h
         src/WorldClock.c
-        src/WorldClock.rsrc
+#        src/WorldClock.rsrc
+        src/WorldClock.r
+        CONSOLE
 )
 
 set_target_properties("Primer1_05_WorldClock" PROPERTIES C_STANDARD 90)
