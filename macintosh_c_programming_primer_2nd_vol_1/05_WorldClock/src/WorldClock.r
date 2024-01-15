@@ -63,23 +63,24 @@ data 'MBAR' (128) {
 	$"0004 0080 0081 0082 0083"                           /* ...Ä.Å.Ç.É */
 };
 
+# background ???
 resource 'SIZE' (-1) {
 	reserved,
-	acceptSuspendResumeEvents,
+	ignoreSuspendResumeEvents,
 	reserved,
 	canBackground,
 	multiFinderAware,
 	backgroundAndForeground,
 	dontGetFrontClicks,
-	ignoreChildDiedEvents,
-	not32BitCompatible,
-	isHighLevelEventAware,
+	ignoreAppDiedEvents,
+	is32BitCompatible,
+	notHighLevelEventAware,
 	onlyLocalHLEvents,
 	notStationeryAware,
 	dontUseTextEditServices,
 	notDisplayManagerAware,
 	reserved,
 	reserved,
-	100 * 1024,
-	24 * 1024
+	300 * 1024,
+	100 * 1024
 };

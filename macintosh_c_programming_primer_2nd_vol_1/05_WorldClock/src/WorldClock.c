@@ -239,6 +239,7 @@ void DoEvent(EventRecord *eventPtr) {
             }
             break;
         case updateEvt:
+        case osEvt:
             DoUpdate(eventPtr);
             break;
     }
